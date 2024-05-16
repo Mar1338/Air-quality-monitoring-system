@@ -1,0 +1,12 @@
+syntax = "proto3";
+package pb;
+
+option go_package = "./SimpleDataTransfer";
+
+message MessageEvent {
+    int32 device_id = 1;
+    int32 event_id = 2;
+    float humidity = 3;
+    float temp_cel = 4;
+    float co2 = 5;
+}

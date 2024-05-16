@@ -1,0 +1,62 @@
+services:
+  server-app:
+    container_name: server-app
+    build: Server/.
+    ports:
+        - 127.0.0.1:3001:3001
+    environment:
+      # For server listening
+      SERVER_HOST: 'server-app'
+      SERVER_PORT: 3001
+      # For connecting to influxdb
+      INFLUXDB_URL: "http://influxdb:8086"
+      INFLUXDB_TOKEN: "my-super-secret-admin-token"
+      INFLUXDB_ORG: "best_org"
+      INFLUXDB_BUCKET: "best_bucket"
+
+  client-esp-emulator:
+    container_name: client-esp-emulator
+    build: Client_ESP8266_Emulator/.
+    environment:
+      SERVER_HOST: 'server-app'
+      SERVER_PORT: 3001
+    depends_on:
+      - server-app
+
+  influxdb:
+    container_name: influxdb
+    image: influxdb:2.7-alpine
+    volumes:
+      # Mount for influxdb data directory and configuration
+      - influxdbv2:/var/lib/influxdb2
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=Admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=12345678910
+      - DOCKER_INFLUXDB_INIT_ORG=best_org
+      - DOCKER_INFLUXDB_INIT_BUCKET=best_bucket
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-super-secret-admin-token
+    depends_on:
+      - server-app
+  grafana:
+    # Environment set up separately
+    container_name: grafana
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "12345678910"  # Задайте пароль администратора
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+      - ./grafana/dashboards/:/var/lib/grafana/dashboards/
+      - ./grafana/data/:/var/lib/grafana
+      - ./grafana/log/:/var/log/grafana
+    depends_on:
+      - influxdb
+volumes:
+  influxdbv2:
+#  grafana_data:
+#  grafana_log:
